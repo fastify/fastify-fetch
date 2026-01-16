@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "test": "node --test test/*.test.js",
+    "test": "borp",
     "test:types": "tsd"
   },
   "keywords": [
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.0.9",
+    "borp": "^0.21.0",
     "fastify": "^5.0.0",
     "neostandard": "^0.12.2",
     "tsd": "^0.33.0"
