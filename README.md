@@ -1,5 +1,9 @@
 # @fastify/fetch
 
+[![CI](https://github.com/fastify/fastify-fetch/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fastify/fastify-fetch/actions/workflows/ci.yml)
+[![NPM version](https://img.shields.io/npm/v/@fastify/fetch.svg?style=flat)](https://www.npmjs.com/package/@fastify/fetch)
+[![neostandard javascript style](https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat)](https://github.com/neostandard/neostandard)
+
 Handle requests using the Web Standard [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) (`Request`/`Response`).
 
 ## Install
@@ -165,4 +169,4 @@ fastify.fetch.get('/info', async (request, ctx) => {
 
 ## License
 
-MIT
+Licensed under [MIT](./LICENSE).
