@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "Handle requests using the fetch standard",
   "main": "index.js",
+  "type": "commonjs",
   "types": "index.d.ts",
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "borp",
     "test:types": "tsd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fastify/fastify-fetch.git"
   },
   "keywords": [
     "fastify",
@@ -17,8 +22,22 @@
     "request",
     "response"
   ],
-  "author": "",
+  "author": "Matteo Collina <hello@matteocollina.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fastify/fastify-fetch/issues"
+  },
+  "homepage": "https://github.com/fastify/fastify-fetch",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/fastify"
+    },
+    {
+      "type": "opencollective",
+      "url": "https://opencollective.com/fastify"
+    }
+  ],
   "dependencies": {
     "fastify-plugin": "^5.0.0"
   },
