@@ -1,5 +1,5 @@
 import Fastify from 'fastify'
-import fastifyFetch from './index.js'
+import fastifyFetch from '../index.js'
 
 const fastify = Fastify({ logger: true })
 
@@ -24,3 +24,17 @@ fastify.fetch.get('/search', async (request, ctx) => {
 })
 
 await fastify.listen({ port: 3000 })
+
+/**
+ * Test the endpoints using curl:
+ *
+ * curl http://localhost:3000/hello
+ *
+ * curl http://localhost:3000/users/42
+ *
+ * curl -X POST http://localhost:3000/data \
+ *   -H "Content-Type: application/json" \
+ *   -d '{"name": "John Doe", "age": 30}'
+ *
+ * curl "http://localhost:3000/search?q=test&limit=10"
+ */

@@ -4,11 +4,11 @@
   "description": "Handle requests using the fetch standard",
   "main": "index.js",
   "type": "commonjs",
-  "types": "index.d.ts",
+  "types": "types/index.d.ts",
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "test": "borp",
+    "test": "borp && npm run test:types",
     "test:types": "tsd"
   },
   "repository": {
@@ -49,6 +49,6 @@
     "tsd": "^0.33.0"
   },
   "tsd": {
-    "directory": "test/types"
+    "directory": "types"
   }
 }

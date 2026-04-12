@@ -1,14 +1,14 @@
 import fastify, { FastifyInstance, FastifyPluginAsync, FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify'
 import { expectType } from 'tsd'
-import * as fastifyFetchStar from '../..'
+import * as fastifyFetchStar from '.'
 import fastifyFetch, {
   FetchContext,
   FetchHandler,
   FetchRoutes,
   fastifyFetch as fastifyFetchNamed
-} from '../..'
+} from '.'
 
-import fastifyFetchCjsImport = require('../..')
+import fastifyFetchCjsImport = require('.')
 const fastifyFetchCjs = require('../..')
 
 const app: FastifyInstance = fastify()
