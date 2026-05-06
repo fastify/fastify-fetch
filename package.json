@@ -9,7 +9,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "borp && npm run test:types",
-    "test:types": "tsd"
+    "test:types": "tstyche"
   },
   "repository": {
     "type": "git",
@@ -46,9 +46,6 @@
     "borp": "^1.0.0",
     "fastify": "^5.0.0",
     "neostandard": "^0.12.2",
-    "tsd": "^0.33.0"
-  },
-  "tsd": {
-    "directory": "types"
+    "tstyche": "^7.0.0"
   }
 }
