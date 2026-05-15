@@ -144,6 +144,21 @@ describe('fastify-fetch', async () => {
     })
   })
 
+  test('AbortController accessible via ctx.abortController', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/abort-controller', async (request, ctx) => {
+      assert.ok(ctx.abortController instanceof AbortController)
+      return new Response('ok')
+    })
+
+    await fastify.inject({
+      method: 'GET',
+      url: '/abort-controller'
+    })
+  })
+
   test('Fastify request accessible via ctx.request', async () => {
     const fastify = Fastify()
     await fastify.register(fastifyFetch)
@@ -395,5 +410,45 @@ describe('fastify-fetch', async () => {
 
     assert.strictEqual(response.statusCode, 500)
     assert.ok(response.body.includes('Handler must return a Response object'))
+  })
+
+  test('Request must be aborted after the handler is worked', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    let cachedRequest
+
+    fastify.fetch.get('/caching-request', async (request, ctx) => {
+      cachedRequest = request
+      return 'response'
+    })
+
+    await fastify.inject({
+      method: 'GET',
+      url: '/caching-request'
+    })
+
+    assert.ok(cachedRequest.signal.aborted)
+  })
+
+  test('Request must be aborted after the handler throws an error', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    let cachedRequest
+
+    fastify.fetch.get('/throwing-error', async (request, ctx) => {
+      cachedRequest = request
+      throw new Error('Unexpected exception raised')
+    })
+
+    try {
+      await fastify.inject({
+        method: 'GET',
+        url: '/throwing-error'
+      })
+    } catch {}
+
+    assert.ok(cachedRequest.signal.aborted)
   })
 })
