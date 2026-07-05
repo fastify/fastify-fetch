@@ -5,6 +5,9 @@
   "main": "index.js",
   "type": "commonjs",
   "types": "types/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
