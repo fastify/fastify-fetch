@@ -3,7 +3,7 @@
 const fp = require('fastify-plugin')
 const { Readable } = require('node:stream')
 
-function createWebRequest (fastifyRequest) {
+function createWebRequest (fastifyRequest, abortController) {
   const url = new URL(fastifyRequest.url, `http://${fastifyRequest.headers.host}`)
   const hasBody = !['GET', 'HEAD'].includes(fastifyRequest.method)
   const body = fastifyRequest.body
@@ -21,7 +21,8 @@ function createWebRequest (fastifyRequest) {
     method: fastifyRequest.method,
     headers: new Headers(fastifyRequest.headers),
     body: webBody,
-    duplex: webBody ? 'half' : undefined
+    duplex: webBody ? 'half' : undefined,
+    signal: abortController.signal
   })
 }
 
@@ -46,26 +47,39 @@ async function fastifyFetch (fastify, options) {
     done(null, payload)
   })
 
+  const abortControllerMap = new WeakMap()
   const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head']
   const fetch = {}
 
   for (const method of methods) {
     fetch[method] = (path, handler) => {
       fastify[method](path, async (request, reply) => {
-        const webRequest = createWebRequest(request)
+        const abortController = new AbortController()
+        const webRequest = createWebRequest(request, abortController)
         const ctx = {
           log: request.log,
           server: fastify,
           params: request.params,
           query: request.query,
           request,
-          reply
+          reply,
+          abortController
         }
+
+        abortControllerMap.set(request, abortController)
 
         const webResponse = await handler(webRequest, ctx)
         await sendWebResponse(reply, webResponse)
       })
     }
+  }
+
+  async function invalidateWebRequest (request) {
+    abortControllerMap.get(request)?.abort()
+  }
+
+  for (const hookName of ['onRequestAbort', 'onError', 'onResponse']) {
+    fastify.addHook(hookName, invalidateWebRequest)
   }
 
   fastify.decorate('fetch', fetch)

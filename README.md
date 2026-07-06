@@ -66,6 +66,7 @@ The handler must return a Web Standard [Response](https://developer.mozilla.org/
 | `ctx.query` | `Record<string, string>` | Query string parameters |
 | `ctx.request` | `FastifyRequest` | Original Fastify request |
 | `ctx.reply` | `FastifyReply` | Original Fastify reply |
+| `ctx.abortController` | `AbortController` | AbortController instance |
 
 ### Hooks
 
