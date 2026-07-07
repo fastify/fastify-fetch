@@ -9,7 +9,10 @@ import { expect } from 'tstyche'
 import * as fastifyFetchStar from '..'
 import fastifyFetch, {
   FetchContext,
+  FetchContextWithAbortController,
   FetchHandler,
+  FetchHandlerWithAbortController,
+  FetchRouteOptions,
   FetchRoutes,
   fastifyFetch as fastifyFetchNamed
 } from '..'
@@ -43,6 +46,14 @@ app.register(fastifyFetch).after(() => {
     expect(ctx.query).type.toBe<Record<string, string>>()
     expect(ctx.request).type.toBe<FastifyRequest>()
     expect(ctx.reply).type.toBe<FastifyReply>()
+    expect(ctx.abortController).type.toBe<AbortController | undefined>()
+    return new Response('ok')
+  })
+
+  app.fetch.get('/abort', { abortController: true }, async (request, ctx) => {
+    expect(request).type.toBe<Request>()
+    expect(ctx).type.toBe<FetchContextWithAbortController>()
+    expect(ctx.abortController).type.toBe<AbortController>()
     return new Response('ok')
   })
 
@@ -76,3 +87,22 @@ const handler: FetchHandler = async (request, ctx) => {
 }
 
 expect(handler).type.toBe<FetchHandler>()
+
+const handlerWithAbortController: FetchHandlerWithAbortController = async (request, ctx) => {
+  expect(ctx.abortController).type.toBe<AbortController>()
+  return new Response('handler')
+}
+
+expect(handlerWithAbortController).type.toBe<FetchHandlerWithAbortController>()
+
+const options: FetchRouteOptions = {
+  abortController: true,
+  schema: {
+    response: {
+      200: {
+        type: 'string'
+      }
+    }
+  }
+}
+expect(options).type.toBe<FetchRouteOptions>()

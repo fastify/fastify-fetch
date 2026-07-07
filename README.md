@@ -40,13 +40,13 @@ await fastify.listen({ port: 3000 })
 ### Handler Signature
 
 ```javascript
-fastify.fetch.get(path, handler)
-fastify.fetch.post(path, handler)
-fastify.fetch.put(path, handler)
-fastify.fetch.delete(path, handler)
-fastify.fetch.patch(path, handler)
-fastify.fetch.options(path, handler)
-fastify.fetch.head(path, handler)
+fastify.fetch.get(path, [options], handler)
+fastify.fetch.post(path, [options], handler)
+fastify.fetch.put(path, [options], handler)
+fastify.fetch.delete(path, [options], handler)
+fastify.fetch.patch(path, [options], handler)
+fastify.fetch.options(path, [options], handler)
+fastify.fetch.head(path, [options], handler)
 ```
 
 The handler receives two arguments:
@@ -66,7 +66,22 @@ The handler must return a Web Standard [Response](https://developer.mozilla.org/
 | `ctx.query` | `Record<string, string>` | Query string parameters |
 | `ctx.request` | `FastifyRequest` | Original Fastify request |
 | `ctx.reply` | `FastifyReply` | Original Fastify reply |
-| `ctx.abortController` | `AbortController` | AbortController instance |
+| `ctx.abortController` | `AbortController \| undefined` | AbortController instance when enabled for the route |
+
+### Route options
+
+The optional `options` object accepts standard Fastify route options plus:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `abortController` | `boolean` | `false` | Create an `AbortController` for the route and expose it as `ctx.abortController`. The Web `Request` signal is aborted when the client aborts the request or when the handler lifecycle ends. |
+
+```javascript
+fastify.fetch.get('/long-running', { abortController: true }, async (request, ctx) => {
+  const result = await doWork({ signal: request.signal })
+  return Response.json(result)
+})
+```
 
 ### Hooks
 

@@ -1,4 +1,4 @@
-import { FastifyPluginAsync, FastifyInstance, FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify'
+import { FastifyPluginAsync, FastifyInstance, FastifyBaseLogger, FastifyRequest, FastifyReply, RouteShorthandOptions } from 'fastify'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -16,18 +16,34 @@ declare namespace fastifyFetch {
     query: Record<string, string>
     request: FastifyRequest
     reply: FastifyReply
+    abortController?: AbortController
+  }
+
+  export interface FetchContextWithAbortController extends FetchContext {
+    abortController: AbortController
+  }
+
+  export interface FetchRouteOptions extends RouteShorthandOptions {
+    abortController?: boolean
   }
 
   export type FetchHandler = (request: Request, ctx: FetchContext) => Response | Promise<Response>
+  export type FetchHandlerWithAbortController = (request: Request, ctx: FetchContextWithAbortController) => Response | Promise<Response>
+
+  export interface FetchRoute {
+    (path: string, handler: FetchHandler): void
+    (path: string, options: FetchRouteOptions & { abortController: true }, handler: FetchHandlerWithAbortController): void
+    (path: string, options: FetchRouteOptions, handler: FetchHandler): void
+  }
 
   export interface FetchRoutes {
-    get(path: string, handler: FetchHandler): void
-    post(path: string, handler: FetchHandler): void
-    put(path: string, handler: FetchHandler): void
-    delete(path: string, handler: FetchHandler): void
-    patch(path: string, handler: FetchHandler): void
-    options(path: string, handler: FetchHandler): void
-    head(path: string, handler: FetchHandler): void
+    get: FetchRoute
+    post: FetchRoute
+    put: FetchRoute
+    delete: FetchRoute
+    patch: FetchRoute
+    options: FetchRoute
+    head: FetchRoute
   }
 
   export interface FastifyFetchOptions {
