@@ -1,6 +1,6 @@
 {
   "name": "@fastify/fetch",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Handle requests using the fetch standard",
   "main": "index.js",
   "type": "commonjs",
