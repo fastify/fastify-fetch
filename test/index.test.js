@@ -144,12 +144,33 @@ describe('fastify-fetch', async () => {
     })
   })
 
-  test('AbortController accessible via ctx.abortController', async () => {
+  test('AbortController is disabled by default', async () => {
     const fastify = Fastify()
     await fastify.register(fastifyFetch)
 
-    fastify.fetch.get('/abort-controller', async (request, ctx) => {
+    let cachedRequest
+
+    fastify.fetch.get('/abort-controller-disabled', async (request, ctx) => {
+      cachedRequest = request
+      assert.strictEqual(ctx.abortController, undefined)
+      return new Response('ok')
+    })
+
+    await fastify.inject({
+      method: 'GET',
+      url: '/abort-controller-disabled'
+    })
+
+    assert.strictEqual(cachedRequest.signal.aborted, false)
+  })
+
+  test('AbortController accessible via ctx.abortController when enabled', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/abort-controller', { abortController: true }, async (request, ctx) => {
       assert.ok(ctx.abortController instanceof AbortController)
+      assert.strictEqual(request.signal, ctx.abortController.signal)
       return new Response('ok')
     })
 
@@ -328,6 +349,29 @@ describe('fastify-fetch', async () => {
     assert.strictEqual(hookCalled, true)
   })
 
+  test('route options are forwarded', async () => {
+    const fastify = Fastify()
+    let hookCalled = false
+
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/route-options', {
+      preHandler: async (request, reply) => {
+        hookCalled = true
+      }
+    }, async (request, ctx) => {
+      return new Response('ok')
+    })
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/route-options'
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.strictEqual(hookCalled, true)
+  })
+
   test('onSend hook fires', async () => {
     const fastify = Fastify()
     let hookCalled = false
@@ -412,15 +456,15 @@ describe('fastify-fetch', async () => {
     assert.ok(response.body.includes('Handler must return a Response object'))
   })
 
-  test('Request must be aborted after the handler is worked', async () => {
+  test('Request must be aborted after the handler completes when enabled', async () => {
     const fastify = Fastify()
     await fastify.register(fastifyFetch)
 
     let cachedRequest
 
-    fastify.fetch.get('/caching-request', async (request, ctx) => {
+    fastify.fetch.get('/caching-request', { abortController: true }, async (request, ctx) => {
       cachedRequest = request
-      return 'response'
+      return new Response('response')
     })
 
     await fastify.inject({
@@ -431,23 +475,21 @@ describe('fastify-fetch', async () => {
     assert.ok(cachedRequest.signal.aborted)
   })
 
-  test('Request must be aborted after the handler throws an error', async () => {
+  test('Request must be aborted after the handler throws an error when enabled', async () => {
     const fastify = Fastify()
     await fastify.register(fastifyFetch)
 
     let cachedRequest
 
-    fastify.fetch.get('/throwing-error', async (request, ctx) => {
+    fastify.fetch.get('/throwing-error', { abortController: true }, async (request, ctx) => {
       cachedRequest = request
       throw new Error('Unexpected exception raised')
     })
 
-    try {
-      await fastify.inject({
-        method: 'GET',
-        url: '/throwing-error'
-      })
-    } catch {}
+    await fastify.inject({
+      method: 'GET',
+      url: '/throwing-error'
+    })
 
     assert.ok(cachedRequest.signal.aborted)
   })
