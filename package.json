@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "test": "borp && npm run test:types",
+    "test": "borp --coverage --check-coverage && npm run test:types",
     "test:types": "tstyche"
   },
   "repository": {

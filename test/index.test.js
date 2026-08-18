@@ -456,6 +456,90 @@ describe('fastify-fetch', async () => {
     assert.ok(response.body.includes('Handler must return a Response object'))
   })
 
+  test('request body must be a Readable stream', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.post('/invalid-body', {
+      preHandler: async request => {
+        request.body = { invalid: true }
+      }
+    }, async () => {
+      return new Response('unexpected response')
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/invalid-body',
+      payload: 'body'
+    })
+
+    assert.strictEqual(response.statusCode, 500)
+    assert.ok(response.body.includes('Request body must be a Readable stream'))
+  })
+
+  test('abort hook handles a body-bearing request and preserves a scalar hook', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    let routeAbortHooks
+    fastify.addHook('onRoute', options => {
+      if (options.url === '/abort-body') {
+        routeAbortHooks = options.onRequestAbort
+      }
+    })
+
+    const userAbortHook = async request => {}
+
+    fastify.fetch.post('/abort-body', {
+      abortController: true,
+      onRequestAbort: userAbortHook
+    }, async (request, ctx) => {
+      assert.strictEqual(routeAbortHooks.length, 2)
+      assert.strictEqual(routeAbortHooks[1], userAbortHook)
+
+      routeAbortHooks[0](ctx.request)
+      assert.strictEqual(request.signal.aborted, true)
+
+      return Response.json(await request.json())
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/abort-body',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ covered: true })
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(response.body), { covered: true })
+  })
+
+  test('abort hook preserves an array of user hooks in order', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    let routeAbortHooks
+    fastify.addHook('onRoute', options => {
+      if (options.url === '/abort-hooks') {
+        routeAbortHooks = options.onRequestAbort
+      }
+    })
+
+    const firstUserHook = async request => {}
+    const secondUserHook = async request => {}
+
+    fastify.fetch.post('/abort-hooks', {
+      abortController: true,
+      onRequestAbort: [firstUserHook, secondUserHook]
+    }, async () => {
+      return new Response('ok')
+    })
+
+    assert.strictEqual(routeAbortHooks.length, 3)
+    assert.deepStrictEqual(routeAbortHooks.slice(1), [firstUserHook, secondUserHook])
+  })
+
   test('Request must be aborted after the handler completes when enabled', async () => {
     const fastify = Fastify()
     await fastify.register(fastifyFetch)
