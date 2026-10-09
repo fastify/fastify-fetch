@@ -80,6 +80,10 @@ app.register(fastifyFetch).after(() => {
   app.fetch.head('/head', async (request, ctx) => {
     return new Response(null)
   })
+
+  app.fetch.all('/all', async (request, ctx) => {
+    return new Response(request.method)
+  })
 })
 
 const handler: FetchHandler = async (request, ctx) => {

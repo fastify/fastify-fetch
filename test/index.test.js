@@ -3,6 +3,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const Fastify = require('fastify')
+const { Readable } = require('node:stream')
 const fastifyFetch = require('../index.js')
 
 describe('fastify-fetch', async () => {
@@ -305,6 +306,33 @@ describe('fastify-fetch', async () => {
     assert.strictEqual(response.headers['x-custom'], 'value')
   })
 
+  test('All method handles multiple HTTP methods', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.all('/all', async (request) => {
+      const body = request.method === 'POST' ? await request.json() : undefined
+      return Response.json({ method: request.method, body })
+    })
+
+    const getResponse = await fastify.inject({
+      method: 'GET',
+      url: '/all'
+    })
+
+    const postResponse = await fastify.inject({
+      method: 'POST',
+      url: '/all',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ ok: true })
+    })
+
+    assert.strictEqual(getResponse.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(getResponse.body), { method: 'GET' })
+    assert.strictEqual(postResponse.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(postResponse.body), { method: 'POST', body: { ok: true } })
+  })
+
   test('onRequest hook fires', async () => {
     const fastify = Fastify()
     let hookCalled = false
@@ -576,5 +604,106 @@ describe('fastify-fetch', async () => {
     })
 
     assert.ok(cachedRequest.signal.aborted)
+  })
+
+  test('regular routes keep the default JSON parser', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.post('/regular', async (request) => {
+      return { body: request.body }
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/regular',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'test' })
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(response.body), { body: { name: 'test' } })
+  })
+
+  test('fetch routes stream request bodies without changing regular route parsers', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.post('/fetch', async (request) => {
+      return Response.json({ body: await request.json() })
+    })
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/fetch',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'fetch' })
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(response.body), { body: { name: 'fetch' } })
+  })
+
+  test('request URL uses forwarded protocol when trustProxy is enabled', async () => {
+    const fastify = Fastify({ trustProxy: true })
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/url', async (request) => {
+      return Response.json({ url: request.url })
+    })
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/url?x=1',
+      headers: {
+        host: 'example.test',
+        'x-forwarded-proto': 'https'
+      }
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.deepStrictEqual(JSON.parse(response.body), { url: 'https://example.test/url?x=1' })
+  })
+
+  test('response bodies are sent as streams', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/stream', async () => {
+      const stream = new ReadableStream({
+        start (controller) {
+          controller.enqueue(new TextEncoder().encode('hello'))
+          controller.enqueue(new TextEncoder().encode(' stream'))
+          controller.close()
+        }
+      })
+
+      return new Response(stream)
+    })
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/stream'
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.strictEqual(response.body, 'hello stream')
+  })
+
+  test('node readable response bodies are sent as streams', async () => {
+    const fastify = Fastify()
+    await fastify.register(fastifyFetch)
+
+    fastify.fetch.get('/node-stream', async () => {
+      return new Response(Readable.toWeb(Readable.from(['node ', 'stream'])))
+    })
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/node-stream'
+    })
+
+    assert.strictEqual(response.statusCode, 200)
+    assert.strictEqual(response.body, 'node stream')
   })
 })
