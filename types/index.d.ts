@@ -44,6 +44,7 @@ declare namespace fastifyFetch {
     patch: FetchRoute
     options: FetchRoute
     head: FetchRoute
+    all: FetchRoute
   }
 
   export interface FastifyFetchOptions {

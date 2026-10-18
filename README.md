@@ -47,6 +47,7 @@ fastify.fetch.delete(path, [options], handler)
 fastify.fetch.patch(path, [options], handler)
 fastify.fetch.options(path, [options], handler)
 fastify.fetch.head(path, [options], handler)
+fastify.fetch.all(path, [options], handler)
 ```
 
 The handler receives two arguments:
@@ -138,6 +139,14 @@ fastify.fetch.post('/users', async (request, ctx) => {
   const body = await request.json()
   const user = await createUser(body)
   return Response.json(user, { status: 201 })
+})
+```
+
+### Handling All Methods
+
+```javascript
+fastify.fetch.all('/resource', async (request, ctx) => {
+  return Response.json({ method: request.method })
 })
 ```
 
